@@ -33,24 +33,8 @@ import java.text.DecimalFormat
 data class Product(val name: String, val unit: String, val price: Double, val category: String)
 
 private val products = listOf(
-    Product("Сэндвич большой", "шт", 85.0, "Сэндвичи и фастфуд"),
-    Product("Сэндвич маленький", "шт", 70.0, "Сэндвичи и фастфуд"),
-    Product("Chicken гриль", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Хот-дог", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Сэндвич Искендер", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Сэндвич с курицей", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Сэндвич Чеддер", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Сэндвич с котлетой", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Сэндвич Цезарь", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Кав бургер", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Кев бургер", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Сэндвич кебаб", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Леш чикен бургер", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Шеф бургер", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Шаверма (курица)", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Шаверма (котлета)", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Шаверма (мясо)", "шт", 100.0, "Сэндвичи и фастфуд"),
-    Product("Панини (с курицей)", "шт", 100.0, "Сэндвичи и фастфуд"),
+    Product("Классика", "шт", 85.0, "Сэндвичи и фастфуд"),
+    Product("Ассорти", "шт", 100.0, "Сэндвичи и фастфуд"),
 
     Product("Яйцо фасованное", "уп", 140.0, "Яйца, сметана и масло"),
     Product("Яйцо 1 категория", "шт", 13.0, "Яйца, сметана и масло"),
@@ -69,13 +53,13 @@ private val products = listOf(
     Product("Сыр колбасный", "кг", 550.0, "Сыры"),
     Product("Сыр колбасный вакуум", "кг", 570.0, "Сыры"),
     Product("Сыр диетический", "кг", 730.0, "Сыры"),
-    Product("Сыр Fitness", "кг", 760.0, "Сыры"),
-    Product("Сыр сулугуни", "кг", 780.0, "Сыры"),
-    Product("Голландский сливочный Чуйский", "кг", 840.0, "Сыры"),
-    Product("Сыр гр. сл. кр. желтый", "кг", 760.0, "Сыры"),
-    Product("Сыр Голландский Особый", "кг", 860.0, "Сыры"),
-    Product("Голландский сливочный Премиум", "кг", 870.0, "Сыры"),
-    Product("Сыр Ландберг", "кг", 980.0, "Сыры")
+    Product("Сыр Fitness", "кг", 730.0, "Сыры"),
+    Product("Сыр сулугуни", "кг", 760.0, "Сыры"),
+    Product("Голландский сливочный Чуйский", "кг", 780.0, "Сыры"),
+    Product("Сыр гр. сл. кр. желтый", "кг", 840.0, "Сыры"),
+    Product("Сыр Голландский Особый", "кг", 760.0, "Сыры"),
+    Product("Голландский сливочный Премиум", "кг", 860.0, "Сыры"),
+    Product("Сыр Ландберг", "кг", 870.0, "Сыры")
 )
 
 private fun money(value: Double): String = DecimalFormat("#,##0.##").format(value)
@@ -83,7 +67,8 @@ private fun money(value: Double): String = DecimalFormat("#,##0.##").format(valu
 
 private fun exportPriceList(
     context: android.content.Context,
-    quantities: Map<String, String>
+    quantities: Map<String, String>,
+    storeName: String
 ): String {
     val purchased = products.mapNotNull { product ->
         val quantity = quantities[product.name]?.toDoubleOrNull() ?: 0.0
@@ -133,6 +118,11 @@ private fun exportPriceList(
         if (pageNumber == 1) {
             canvas!!.drawText("KAV&KEV — СОСТАВ ЗАКАЗА", margin, y, titlePaint)
             y += 22f
+            if (storeName.isNotBlank()) {
+                val safeStoreName = if (storeName.length > 65) storeName.take(62) + "..." else storeName
+                canvas!!.drawText("Магазин: $safeStoreName", margin, y, headingPaint)
+                y += 18f
+            }
             canvas!!.drawText("Дата и время: $displayDate", margin, y, smallPaint)
             y += 22f
         } else {
@@ -231,6 +221,7 @@ class MainActivity : ComponentActivity() {
 fun CalculatorScreen() {
     val quantities = remember { mutableStateMapOf<String, String>() }
     var search by remember { mutableStateOf("") }
+    var storeName by remember { mutableStateOf("") }
     val categories = listOf("Сэндвичи и фастфуд", "Яйца, сметана и масло", "Сыры")
     val expanded = remember {
         mutableStateMapOf(
@@ -268,6 +259,13 @@ fun CalculatorScreen() {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             OutlinedTextField(
+                value = storeName, onValueChange = { storeName = it },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                label = { Text("Название магазина") },
+                placeholder = { Text("Введите название магазина") },
+                singleLine = true
+            )
+            OutlinedTextField(
                 value = search, onValueChange = { search = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                 label = { Text("Поиск товара") }, singleLine = true
@@ -275,7 +273,11 @@ fun CalculatorScreen() {
             Button(
                 onClick = {
                     try {
-                        val message = exportPriceList(context = context, quantities = quantities.toMap())
+                        val message = exportPriceList(
+                            context = context,
+                            quantities = quantities.toMap(),
+                            storeName = storeName.trim()
+                        )
                         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
                         Toast.makeText(context, "Не удалось скачать заказ: ${e.message}", Toast.LENGTH_LONG).show()
@@ -288,7 +290,7 @@ fun CalculatorScreen() {
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 items(categories, key = { it }) { group ->
                     val groupProducts = products.filter {
@@ -303,7 +305,7 @@ fun CalculatorScreen() {
                             Row(
                                 modifier = Modifier.fillMaxWidth()
                                     .clickable { expanded[group] = !isExpanded }
-                                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                                    .padding(horizontal = 12.dp, vertical = 9.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(Modifier.weight(1f)) {
@@ -314,7 +316,7 @@ fun CalculatorScreen() {
                             }
                         }
                         if (isExpanded || search.isNotBlank()) {
-                            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 groupProducts.forEach { product ->
                                     val qty = quantities[product.name] ?: ""
                                     val count = qty.toDoubleOrNull() ?: 0.0
@@ -322,7 +324,7 @@ fun CalculatorScreen() {
                                         shape = RoundedCornerShape(14.dp),
                                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                                     ) {
-                                        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                                        Column(Modifier.fillMaxWidth().padding(horizontal = 9.dp, vertical = 6.dp)) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Column(Modifier.weight(1f)) {
                                                     Text(product.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
@@ -359,7 +361,7 @@ fun CalculatorScreen() {
                                                 }
                                             }
                                             if (count > 0) {
-                                                Spacer(Modifier.height(6.dp))
+                                                Spacer(Modifier.height(3.dp))
                                                 Text(
                                                     "Сумма: ${money(count * product.price)} сом",
                                                     fontWeight = FontWeight.Medium,
